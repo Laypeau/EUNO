@@ -58,9 +58,9 @@ public class EunoPlayArea : NetworkBehaviour
 	[SyncVar] public EunoCard openPile;
 	[SyncVar] public EunoCard togglePile;
 
-	[SyncVar] public TMP_Text closedPileText;
-	[SyncVar] public TMP_Text openPileText;
-	[SyncVar] public TMP_Text togglePileText;
+	public TMP_Text closedPileText;
+	public TMP_Text openPileText;
+	public TMP_Text togglePileText;
 
 	public RectTransform selectTransform; /////set in inspector
 	public TMP_Text playerClosedCountText;  
@@ -135,16 +135,18 @@ public class EunoPlayArea : NetworkBehaviour
 
 		if (pile == 0)
 		{
-			closedPileText.text = isFromClosed ? player.closedHand[selectedIndex].ToString() : player.openHand[selectedIndex].ToString(); 
+			closedPile = isFromClosed ? player.closedHand[selectedIndex] : player.openHand[selectedIndex]; 
 		}
 		else if (pile == 1)
 		{
-			openPileText.text = isFromClosed ? player.closedHand[selectedIndex].ToString() : player.openHand[selectedIndex].ToString();
+			openPile = isFromClosed ? player.closedHand[selectedIndex] : player.openHand[selectedIndex];
 		}
 		else if (pile == 2)
 		{
-			togglePileText.text = isFromClosed ? player.closedHand[selectedIndex].ToString() : player.openHand[selectedIndex].ToString();
+			togglePile = isFromClosed ? player.closedHand[selectedIndex] : player.openHand[selectedIndex];
 		}
+
+		UpdateCardText();
 
 		if (isFromClosed) player.closedHand.RemoveAt(selectedIndex);
 		else player.openHand.RemoveAt(selectedIndex);
@@ -152,7 +154,13 @@ public class EunoPlayArea : NetworkBehaviour
 
 	public static EunoCard GetRandomCard() => new EunoCard((CardColour)Random.Range(0,4), (CardType)Random.Range(0, 15));
 
-
+	[ClientRpc]
+	public void UpdateCardText()
+	{
+		closedPileText.text = closedPile.ToString();
+		openPileText.text = openPile.ToString();
+		togglePileText.text = togglePile.ToString();
+	}
 
 
 	/////////////////////////////////////////////////////////// Temporary player stuff //////////////////////////////////////////////////////////////////////////
