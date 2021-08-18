@@ -54,9 +54,9 @@ public enum EunoPile
 
 public class EunoPlayArea : NetworkBehaviour
 {
-	[SyncVar] public EunoCard closedPile;
-	[SyncVar] public EunoCard openPile;
-	[SyncVar] public EunoCard togglePile;
+	[SyncVar(hook = nameof(UpdateClosedDisplay))] public EunoCard closedPile;
+	[SyncVar(hook = nameof(UpdateOpenDisplay))] public EunoCard openPile;
+	[SyncVar(hook = nameof(UpdateToggleDisplay))] public EunoCard togglePile;
 
 	public TMP_Text closedPileText;
 	public TMP_Text openPileText;
@@ -108,7 +108,7 @@ public class EunoPlayArea : NetworkBehaviour
 	}
 	
 	//pass local player info to server
-	public void PlayCard(int pile) //becuas button.onClick doesn't give enums
+	public void PlayCard(int pile) //becuase button.onClick doesn't give enums
 	{
 		EunoPlayer player = NetworkClient.localPlayer.GetComponent<EunoPlayer>();
 
@@ -146,7 +146,6 @@ public class EunoPlayArea : NetworkBehaviour
 			togglePile = isFromClosed ? player.closedHand[selectedIndex] : player.openHand[selectedIndex];
 		}
 
-		UpdateCardText();
 
 		if (isFromClosed) player.closedHand.RemoveAt(selectedIndex);
 		else player.openHand.RemoveAt(selectedIndex);
@@ -154,13 +153,10 @@ public class EunoPlayArea : NetworkBehaviour
 
 	public static EunoCard GetRandomCard() => new EunoCard((CardColour)Random.Range(0,4), (CardType)Random.Range(0, 15));
 
-	[ClientRpc]
-	public void UpdateCardText()
-	{
-		closedPileText.text = closedPile.ToString();
-		openPileText.text = openPile.ToString();
-		togglePileText.text = togglePile.ToString();
-	}
+	public void UpdateClosedDisplay(EunoCard oldCard, EunoCard newCard) => closedPileText.text = newCard.ToString();
+	public void UpdateOpenDisplay(EunoCard oldCard, EunoCard newCard) => openPileText.text = newCard.ToString();
+	public void UpdateToggleDisplay(EunoCard oldCard, EunoCard newCard) => togglePileText.text = newCard.ToString();
+
 
 
 	/////////////////////////////////////////////////////////// Temporary player stuff //////////////////////////////////////////////////////////////////////////
