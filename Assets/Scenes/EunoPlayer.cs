@@ -6,17 +6,12 @@ public class EunoPlayer : NetworkBehaviour
 	[SyncVar] public string playerName;
 	public SyncList<EunoCard> closedHand = new SyncList<EunoCard>(); //interest management -- players only observe their own hands, hand size is syncvar, reduces bandwidth requirements
 	public SyncList<EunoCard> openHand = new SyncList<EunoCard>();
-	[SyncVar(hook = nameof(ClosedCountUpdated))] public int closedCount;
-	[SyncVar(hook = nameof(OpenCountUpdated))] public int openCount;
-	
+
 	private EunoOpponentUI opponentUI; //will be null on local player
 	[SerializeField] private GameObject opponentUIPrefab; //set in inspector
 
 	private EunoChatWindow chatWindow; //move to delegate or action to tidy up?
-	public EunoPlayArea playArea; //set by the play area when spawned locally
-
-	public int closedSelectedIndex = 0;
-	public int openSelectedIndex = 0;
+	public EunoPlayArea playArea; //set by the play area when it spawns locally
 
 	public void Start()
 	{
@@ -78,81 +73,27 @@ public class EunoPlayer : NetworkBehaviour
 		openHand.Add(card);
 	}
 
-	[Server]
 	void OnClosedHandUpdated(SyncList<EunoCard>.Operation op, int index, EunoCard oldCard, EunoCard newCard)
 	{
-		switch (op)
+		if (isLocalPlayer)
 		{
-			case SyncList<EunoCard>.Operation.OP_ADD:
-				closedCount += 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_REMOVEAT:
-				closedCount -= 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_INSERT:
-				closedCount += 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_CLEAR:
-				closedCount = 0;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_SET:
-				break;
+			playArea.UpdateLocalPlayerDisplay();
+		}
+		else
+		{
+			opponentUI.SetClosedCount(closedHand.Count);
 		}
 	}
 
-	[Server]
 	void OnOpenHandUpdated(SyncList<EunoCard>.Operation op, int index, EunoCard oldCard, EunoCard newCard)
 	{
-		switch (op)
-		{
-			case SyncList<EunoCard>.Operation.OP_ADD:
-				openCount += 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_REMOVEAT:
-				openCount -= 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_INSERT:
-				openCount += 1;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_CLEAR:
-				openCount = 0;
-				break;
-
-			case SyncList<EunoCard>.Operation.OP_SET:
-				break;
-		}
-	}
-
-	//update opponent UI on syncvar change
-	public void ClosedCountUpdated(int oldValue, int newValue)
-	{
 		if (isLocalPlayer)
 		{
 			playArea.UpdateLocalPlayerDisplay();
 		}
 		else
 		{
-			opponentUI.SetClosedCount(newValue);
-		}
-	}
-
-	//update opponent UI on syncvar change
-	public void OpenCountUpdated(int oldValue, int newValue)
-	{
-		if (isLocalPlayer)
-		{
-			playArea.UpdateLocalPlayerDisplay();
-		}
-		else
-		{
-			opponentUI.SetOpenCount(newValue);
+			opponentUI.SetOpenCount(openHand.Count);
 		}
 	}
 
