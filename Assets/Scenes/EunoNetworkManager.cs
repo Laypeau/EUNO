@@ -1,13 +1,13 @@
-﻿using UnityEngine;
+using UnityEngine;
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine.UI;
 using TMPro;
 
 public class EunoNetworkManager : NetworkManager
 {
-	[HideInInspector] public EunoPlayArea playArea;
 	[SerializeField] private GameObject playAreaPrefab; //Set in inspector
-
+	
 	private RectTransform disconnectButton;
 	private RectTransform connectPanel;
 	private RectTransform gamePanel;
@@ -20,15 +20,16 @@ public class EunoNetworkManager : NetworkManager
 	//register networkMessages, spawn playArea
 	public override void OnStartServer()
 	{
-		NetworkServer.RegisterHandler<CreatePlayerMessage>(OnCreatePlayer);
+		NetworkServer.RegisterHandler<CreatePlayerMessage>(RecieveCreatePlayerMessage);
 
-		GameObject asdf = Instantiate(playAreaPrefab);
-		NetworkServer.Spawn(asdf);
-		playArea = asdf.GetComponent<EunoPlayArea>();
+		GameObject playArea = Instantiate(playAreaPrefab);
+		NetworkServer.Spawn(playArea);
 	}
 
+	//sets UI positions
 	public override void Start()
 	{
+		Camera.main.transform.rotation = Camera.main.transform.rotation * Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 		disconnectButton = GameObject.Find("Canvas/Disconnect Button").GetComponent<RectTransform>();
 		disconnectButton.anchoredPosition = new Vector3(20000, 0, 0); //deactivate
 	
@@ -57,34 +58,34 @@ public class EunoNetworkManager : NetworkManager
 		//gamePanel.anchoredPosition = new Vector3(20000, 0, 0);
 	}
 
-	//left game message for all connected clients
+	//call left game message on  all connected clients, removes
 	public override void OnServerDisconnect(NetworkConnection conn)
 	{
 		//throw an error if host, I guess
 		EunoPlayer player = conn.identity.GetComponent<EunoPlayer>();
 		NetworkClient.localPlayer.GetComponent<EunoPlayer>().RpcUpdateChat($"<color=red>{player.playerName} has left the game</color>");
 
-		base.OnServerDisconnect(conn);
+		NetworkServer.DestroyPlayerForConnection(conn);
 	}
 
-	//disable AutoCreatePlayer and do it here
+	//disable AutoCreatePlayer and send a message to do it
 	public override void OnClientConnect(NetworkConnection conn)
 	{
-		base.OnClientConnect(conn);
+		base.OnClientConnect(conn); //sets client ready because AutoCreatePlayer == false
 
-		//create a player with the username set on this client
+		//create a player on server with the username set on this client. conn is connection to server
 		conn.Send(new CreatePlayerMessage {name = connectPanel.transform.Find("InputField Username").GetComponent<TMP_InputField>().text});
 	}
 
-	//disable AutoCreatePlayer and do it OnClientConnect
-	private void OnCreatePlayer(NetworkConnection conn, CreatePlayerMessage networkMessage)
+	//create a player on server with the username set on this client
+	private void RecieveCreatePlayerMessage(NetworkConnection conn, CreatePlayerMessage networkMessage)
 	{
-		GameObject asdf = Instantiate(playerPrefab);
-		asdf.name = $"Player {networkMessage.name} [connId={conn.connectionId}]";
-		EunoPlayer localPlayer = asdf.GetComponent<EunoPlayer>();
+		GameObject GO = Instantiate(playerPrefab);
+		GO.name = $"Player {networkMessage.name} [connId={conn.connectionId}]";
+		EunoPlayer localPlayer = GO.GetComponent<EunoPlayer>();
 		localPlayer.playerName = networkMessage.name;
 
-		NetworkServer.AddPlayerForConnection(conn, asdf);
+		NetworkServer.AddPlayerForConnection(conn, GO);
 	}
 
 	//called by UI

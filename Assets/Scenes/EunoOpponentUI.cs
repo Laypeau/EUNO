@@ -3,31 +3,35 @@ using TMPro;
 
 public class EunoOpponentUI : MonoBehaviour
 {
+	public EunoPlayer player;
 	public TMP_Text nameText;
 	public TMP_Text closedText;
 	public TMP_Text openText;
-	public EunoPlayer player;
 
-	public void Start()
+	public void Awake()
 	{
-		nameText = transform.Find("Name").GetComponent<TMP_Text>();
-		closedText = transform.Find("Closed").GetComponent<TMP_Text>();
-		openText = transform.Find("Open").GetComponent<TMP_Text>();
+		nameText = transform.GetChild(0).Find("Name").GetComponent<TMP_Text>();
+		closedText = transform.GetChild(0).Find("Closed").GetComponent<TMP_Text>();
+		openText = transform.GetChild(0).Find("Open").GetComponent<TMP_Text>();
 	}
 
-	public void SetPlayer(EunoPlayer asdf)
+
+	public void SetPlayer(EunoPlayer player)
 	{
-		player = asdf;
-		nameText.text = player.playerName;
+		this.player = player;
+		nameText.text = this.player.playerName;
 	}
 
-	public void SetClosedCount(int asdf)
+	public void UpdateDisplay() //called by synclist hook
 	{
-		closedText.text = $"Closed: {asdf}";
+		closedText.text = $"Closed: {player.closedHand.Count}";
+		openText.text = $"Open: {player.openHand.Count}";
 	}
 
-	public void SetOpenCount(int asdf)
+	//for selecting player on 3s, 7s, etc
+	public void OnClickOpponent()
 	{
-		openText.text = $"Open: {asdf}";
+		player.playArea.selectedPlayer = player;
 	}
 }
+
